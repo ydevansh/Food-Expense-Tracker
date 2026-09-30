@@ -142,7 +142,7 @@ export default function History() {
                 <div className="date-group-label">{fmt.date(date)}</div>
                 <div className="date-group-line" />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="history-meals-grid">
                 {grouped[date].map(meal => (
                   <MealCard
                     key={meal._id || meal.id}

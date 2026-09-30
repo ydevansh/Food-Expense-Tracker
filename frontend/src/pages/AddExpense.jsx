@@ -114,117 +114,123 @@ export default function AddExpense() {
   }
 
   return (
-    <form className="add-expense-form" onSubmit={handleSubmit}>
-      {/* Date */}
-      <div className="form-group">
-        <label className="form-label">📅 Date</label>
-        <input type="date" className="form-input" value={date} max={today()} onChange={e => setDate(e.target.value)} required />
-      </div>
-
-      {/* Meal Type */}
-      <div className="form-group">
-        <label className="form-label">Meal Type</label>
-        <div className="meal-type-selector">
-          {['breakfast', 'dinner'].map(t => (
-            <button
-              key={t} type="button"
-              className={`meal-type-btn ${mealType === t ? 'selected' : ''}`}
-              onClick={() => setMealType(t)}
-            >
-              <span className="icon">{mealIcon(t)}</span>
-              <span className="label">{t.charAt(0).toUpperCase() + t.slice(1)}</span>
-              <span className="price">{fmt.currency(prices[t])} / plate</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Plates */}
-      <div className="form-group">
-        <label className="form-label">Number of Plates</label>
-        <div className="number-stepper">
-          <button type="button" className="stepper-btn" onClick={() => setPlates(p => Math.max(1, p - 1))}>−</button>
-          <input
-            type="number" className="stepper-value"
-            value={plates} min="1" max="20"
-            onChange={e => setPlates(Math.max(1, parseInt(e.target.value) || 1))}
-          />
-          <button type="button" className="stepper-btn" onClick={() => setPlates(p => p + 1)}>+</button>
-        </div>
-      </div>
-
-      {/* Who Ate */}
-      <div className="form-group">
-        <label className="form-label">Who Ate?</label>
-        <div className="check-group">
-          {users.map(u => {
-            const uid     = (u._id || u.id).toString();
-            const checked = selectedIds.includes(uid);
-            return (
-              <label key={uid} className={`check-pill ${checked ? 'selected' : ''}`}>
-                <input type="checkbox" checked={checked} onChange={() => toggleUser(uid)} />
-                {u.name}
-              </label>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Calculation Preview */}
-      {selectedIds.length > 0 && (
-        <div className="calc-preview">
-          <div className="calc-total">{fmt.currency(totalAmount)}</div>
-          <div className="calc-subtitle">
-            {plates} plate{plates !== 1 ? 's' : ''} × {fmt.currency(pricePerPlate)} ÷ {selectedIds.length} people
+    <form onSubmit={handleSubmit} className="page-section">
+      <div className="expense-form-grid">
+        <div className="form-col">
+          {/* Date */}
+          <div className="form-group">
+            <label className="form-label">📅 Date</label>
+            <input type="date" className="form-input" value={date} max={today()} onChange={e => setDate(e.target.value)} required />
           </div>
-          <div className="calc-shares">
-            {users.map((u, i) => {
-              const uid   = (u._id || u.id).toString();
-              const share = shares[uid] || 0;
-              return (
-                <div key={uid} className="calc-share-row">
-                  <span className="user-name">{u.name}</span>
-                  <span className={`amount ${share === 0 ? 'zero' : ''}`}>{fmt.currency(share)}</span>
-                </div>
-              );
-            })}
+
+          {/* Meal Type */}
+          <div className="form-group">
+            <label className="form-label">Meal Type</label>
+            <div className="meal-type-selector">
+              {['breakfast', 'dinner'].map(t => (
+                <button
+                  key={t} type="button"
+                  className={`meal-type-btn ${mealType === t ? 'selected' : ''}`}
+                  onClick={() => setMealType(t)}
+                >
+                  <span className="icon">{mealIcon(t)}</span>
+                  <span className="label">{t.charAt(0).toUpperCase() + t.slice(1)}</span>
+                  <span className="price">{fmt.currency(prices[t])} / plate</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Plates */}
+          <div className="form-group">
+            <label className="form-label">Number of Plates</label>
+            <div className="number-stepper">
+              <button type="button" className="stepper-btn" onClick={() => setPlates(p => Math.max(1, p - 1))}>−</button>
+              <input
+                type="number" className="stepper-value"
+                value={plates} min="1" max="20"
+                onChange={e => setPlates(Math.max(1, parseInt(e.target.value) || 1))}
+              />
+              <button type="button" className="stepper-btn" onClick={() => setPlates(p => p + 1)}>+</button>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="form-group">
+            <label className="form-label">📝 Notes (optional)</label>
+            <textarea className="form-textarea" placeholder="e.g. Devansh absent, extra plate..." value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
         </div>
-      )}
 
-      {/* Payment */}
-      <div className="form-group">
-        <label className="form-label">💳 Who Paid? (enter amounts)</label>
-        <div className="payment-section">
-          {users.map(u => {
-            const uid = (u._id || u.id).toString();
-            return (
-              <div key={uid} className="payment-row">
-                <span className="payment-user-name">{u.name}</span>
-                <input
-                  type="number" className="payment-input"
-                  placeholder="₹0" min="0" step="0.01"
-                  value={payments[uid] || ''}
-                  onChange={e => setPayment(uid, e.target.value)}
-                />
+        <div className="form-col">
+          {/* Who Ate */}
+          <div className="form-group">
+            <label className="form-label">Who Ate?</label>
+            <div className="check-group">
+              {users.map(u => {
+                const uid     = (u._id || u.id).toString();
+                const checked = selectedIds.includes(uid);
+                return (
+                  <label key={uid} className={`check-pill ${checked ? 'selected' : ''}`}>
+                    <input type="checkbox" checked={checked} onChange={() => toggleUser(uid)} />
+                    {u.name}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Calculation Preview */}
+          {selectedIds.length > 0 && (
+            <div className="calc-preview">
+              <div className="calc-total">{fmt.currency(totalAmount)}</div>
+              <div className="calc-subtitle">
+                {plates} plate{plates !== 1 ? 's' : ''} × {fmt.currency(pricePerPlate)} ÷ {selectedIds.length} people
               </div>
-            );
-          })}
-          {totalPaymentEntered > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 14px', fontSize: 13 }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Payment Total</span>
-              <span style={{ fontWeight: 700, color: Math.abs(totalPaymentEntered - totalAmount) < 0.5 ? 'var(--green)' : 'var(--red)' }}>
-                {fmt.currency(totalPaymentEntered)} / {fmt.currency(totalAmount)}
-              </span>
+              <div className="calc-shares">
+                {users.map((u) => {
+                  const uid   = (u._id || u.id).toString();
+                  const share = shares[uid] || 0;
+                  return (
+                    <div key={uid} className="calc-share-row">
+                      <span className="user-name">{u.name}</span>
+                      <span className={`amount ${share === 0 ? 'zero' : ''}`}>{fmt.currency(share)}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Notes */}
-      <div className="form-group">
-        <label className="form-label">📝 Notes (optional)</label>
-        <textarea className="form-textarea" placeholder="e.g. Devansh absent, extra plate..." value={notes} onChange={e => setNotes(e.target.value)} />
+          {/* Payment */}
+          <div className="form-group">
+            <label className="form-label">💳 Who Paid? (enter amounts)</label>
+            <div className="payment-section">
+              {users.map(u => {
+                const uid = (u._id || u.id).toString();
+                return (
+                  <div key={uid} className="payment-row">
+                    <span className="payment-user-name">{u.name}</span>
+                    <input
+                      type="number" className="payment-input"
+                      placeholder="₹0" min="0" step="0.01"
+                      value={payments[uid] || ''}
+                      onChange={e => setPayment(uid, e.target.value)}
+                    />
+                  </div>
+                );
+              })}
+              {totalPaymentEntered > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 14px', fontSize: 13 }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Payment Total</span>
+                  <span style={{ fontWeight: 700, color: Math.abs(totalPaymentEntered - totalAmount) < 0.5 ? 'var(--green)' : 'var(--red)' }}>
+                    {fmt.currency(totalPaymentEntered)} / {fmt.currency(totalAmount)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Submit */}

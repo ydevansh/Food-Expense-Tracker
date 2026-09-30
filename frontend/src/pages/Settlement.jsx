@@ -115,9 +115,11 @@ export default function Settlement() {
           <p>Create one above after 15 days or at month end</p>
         </div>
       ) : (
-        settlements.map(s => (
-          <SettlementCard key={s._id || s.id} settlement={s} onMarkPaid={markPaid} onDelete={deleteSettlement} />
-        ))
+        <div className="settlement-grid">
+          {settlements.map(s => (
+            <SettlementCard key={s._id || s.id} settlement={s} onMarkPaid={markPaid} onDelete={deleteSettlement} />
+          ))}
+        </div>
       )}
     </div>
   );

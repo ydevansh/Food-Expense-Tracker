@@ -91,7 +91,7 @@ export default function Reports() {
           {/* Per-User Stats */}
           <div>
             <div className="section-title">Per Person Summary</div>
-            <div className="mt-8" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="mt-8 report-users-grid">
               {(data.user_stats || []).map((us, i) => (
                 <div key={us.user._id} className="report-user-card">
                   <div className="report-user-header">
