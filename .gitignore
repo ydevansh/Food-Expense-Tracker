@@ -1,0 +1,20 @@
+# Environment variables (contains secrets!)
+backend/.env
+.env
+
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+npm-debug.log*
