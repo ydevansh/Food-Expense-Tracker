@@ -9,8 +9,7 @@ const STATUS_LABELS = { active: '● Active', pending: '⏳ Pending', settled: '
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Settlement() {
-  const { showToast, showModal, closeModal } = useApp();
-  const navigate = typeof window !== 'undefined' ? null : null; // not used here
+  const { showToast, showModal, closeModal, isAdmin, navigate } = useApp();
 
   const [periods,  setPeriods]  = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -280,10 +279,41 @@ export default function Settlement() {
   return (
     <div className="page-section">
 
+      {/* ── Public Read-Only Notice ───────────────────────────────────── */}
+      {!isAdmin && (
+        <div style={{
+          background: 'rgba(99, 102, 241, 0.1)',
+          border: '1px solid rgba(99, 102, 241, 0.3)',
+          borderRadius: 12,
+          padding: '12px 16px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 10
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20 }}>👁️</span>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+              Viewing settlement history in <strong>Read-Only Mode</strong>. Log in as administrator to calculate, confirm, or reset settlements.
+            </span>
+          </div>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => navigate('/admin/login')}
+            style={{ color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.4)', fontWeight: 600 }}
+          >
+            🔐 Admin Login
+          </button>
+        </div>
+      )}
+
       {/* ── Active Period Actions ─────────────────────────────────────── */}
       {activePeriod && (
         <ActivePeriodCard
           period={activePeriod}
+          isAdmin={isAdmin}
           onCalculate={() => calculatePeriod(activePeriod)}
           onDelete={() => deletePeriod(activePeriod)}
           working={working}
@@ -294,6 +324,7 @@ export default function Settlement() {
       {pendingPeriod && (
         <PendingPeriodCard
           period={pendingPeriod}
+          isAdmin={isAdmin}
           onToggleTx={(tx) => toggleTransaction(pendingPeriod, tx)}
           onConfirm={() => confirmSettlement(pendingPeriod)}
           onRecalculate={() => calculatePeriod(pendingPeriod)}
@@ -304,27 +335,40 @@ export default function Settlement() {
 
       {/* ── Create New Period ─────────────────────────────────────────── */}
       {!activePeriod && !pendingPeriod && (
-        <div className="card-elevated">
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>🆕 Start New Accounting Period</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-            <div className="form-group">
-              <label className="form-label">From</label>
-              <input type="date" className="form-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
+        isAdmin ? (
+          <div className="card-elevated">
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>🆕 Start New Accounting Period</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+              <div className="form-group">
+                <label className="form-label">From</label>
+                <input type="date" className="form-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">To</label>
+                <input type="date" className="form-input" value={endDate} max={today()} onChange={e => setEndDate(e.target.value)} />
+              </div>
             </div>
-            <div className="form-group">
-              <label className="form-label">To</label>
-              <input type="date" className="form-input" value={endDate} max={today()} onChange={e => setEndDate(e.target.value)} />
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPreset('1-15')}>1–15</button>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPreset('16-end')}>16–End</button>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPreset('month')}>Full Month</button>
             </div>
+            <button className="btn btn-primary btn-full" onClick={createPeriod} disabled={working}>
+              {working ? 'Creating...' : '🚀 Start Period'}
+            </button>
           </div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <button className="btn btn-secondary btn-sm" onClick={() => setPreset('1-15')}>1–15</button>
-            <button className="btn btn-secondary btn-sm" onClick={() => setPreset('16-end')}>16–End</button>
-            <button className="btn btn-secondary btn-sm" onClick={() => setPreset('month')}>Full Month</button>
+        ) : (
+          <div className="card-elevated" style={{ textAlign: 'center', padding: '24px 16px' }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>💰</div>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>No Active Period Currently Running</div>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4, marginBottom: 14 }}>
+              An administrator must start a new accounting period to track running balances.
+            </p>
+            <button className="btn btn-secondary btn-sm" onClick={() => navigate('/admin/login')}>
+              🔐 Log In to Start Period
+            </button>
           </div>
-          <button className="btn btn-primary btn-full" onClick={createPeriod} disabled={working}>
-            {working ? 'Creating...' : '🚀 Start Period'}
-          </button>
-        </div>
+        )
       )}
 
       {/* ── Settled History ───────────────────────────────────────────── */}
@@ -338,6 +382,7 @@ export default function Settlement() {
               <SettledPeriodCard
                 key={p._id || p.id}
                 period={p}
+                isAdmin={isAdmin}
                 onReopen={() => reopenPeriod(p)}
                 onDelete={() => deletePeriod(p)}
                 working={working}
@@ -359,7 +404,7 @@ export default function Settlement() {
 }
 
 // ─── Active period card ───────────────────────────────────────────────────────
-function ActivePeriodCard({ period, onCalculate, onDelete, working }) {
+function ActivePeriodCard({ period, onCalculate, onDelete, working, isAdmin }) {
   const [open, setOpen] = useState(true);
 
   return (
@@ -392,18 +437,20 @@ function ActivePeriodCard({ period, onCalculate, onDelete, working }) {
             <strong>Total period expense:</strong> {fmt.currency(period.total_expense || 0)}
           </div>
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              className="btn btn-primary flex-1"
-              onClick={onCalculate}
-              disabled={working}
-            >
-              {working ? 'Calculating...' : '📊 Calculate & Preview Settlement'}
-            </button>
-            <button className="btn btn-danger btn-sm" onClick={onDelete} disabled={working} title="Only works if no meals are attached">
-              🗑️
-            </button>
-          </div>
+          {isAdmin && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-primary flex-1"
+                onClick={onCalculate}
+                disabled={working}
+              >
+                {working ? 'Calculating...' : '📊 Calculate & Preview Settlement'}
+              </button>
+              <button className="btn btn-danger btn-sm" onClick={onDelete} disabled={working} title="Only works if no meals are attached">
+                🗑️
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
