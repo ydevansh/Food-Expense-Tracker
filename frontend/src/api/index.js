@@ -4,9 +4,27 @@ const baseURL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api` 
   : '/api';
 
-const http = axios.create({ baseURL });
+const http = axios.create({
+  baseURL,
+  withCredentials: true // send HttpOnly cookies with every request
+});
+
+// Attach Authorization header if token exists in localStorage (dual-layer auth)
+http.interceptors.request.use((config) => {
+  const token = localStorage.getItem('admin_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 const api = {
+  // ── Authentication ─────────────────────────────────────────────
+  login:             (creds) => http.post('/auth/login', creds).then(r => r.data),
+  getMe:             ()      => http.get('/auth/me').then(r => r.data),
+  logout:            ()      => http.post('/auth/logout').then(r => r.data),
+  changeCredentials: (data)  => http.post('/auth/change-credentials', data).then(r => r.data),
+
   // ── Users ──────────────────────────────────────────────────────
   getUsers: ()             => http.get('/users').then(r => r.data),
 
@@ -34,7 +52,7 @@ const api = {
   // ── Reports ────────────────────────────────────────────────────
   getReports: (params)     => http.get('/reports', { params }).then(r => r.data),
 
-  // ── Settlement Periods (new lifecycle API) ─────────────────────
+  // ── Settlement Periods (lifecycle API) ─────────────────────────
   getPeriods:          ()       => http.get('/periods').then(r => r.data),
   getActivePeriod:     ()       => http.get('/periods/active').then(r => r.data),
   getPeriod:           (id)     => http.get(`/periods/${id}`).then(r => r.data),
@@ -46,7 +64,7 @@ const api = {
     http.put(`/periods/${periodId}/transactions/${txId}`, { status }).then(r => r.data),
   deletePeriod:        (id, params = {}) => http.delete(`/periods/${id}`, { params }).then(r => r.data),
 
-  // ── Settlements (legacy — kept for backward compatibility) ─────
+  // ── Settlements (legacy) ────────────────────────────────────────
   getSettlements:  ()      => http.get('/settlements').then(r => r.data),
   getSettlement:   (id)    => http.get(`/settlements/${id}`).then(r => r.data),
   createSettlement: (data) => http.post('/settlements', data).then(r => r.data),
