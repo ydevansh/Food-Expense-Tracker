@@ -411,7 +411,7 @@ function ActivePeriodCard({ period, onCalculate, onDelete, working }) {
 }
 
 // ─── Pending period card ──────────────────────────────────────────────────────
-function PendingPeriodCard({ period, onToggleTx, onConfirm, onRecalculate, working }) {
+function PendingPeriodCard({ period, onToggleTx, onConfirm, onRecalculate, onResetToActive, working }) {
   const [open, setOpen] = useState(true);
 
   const allPaid = (period.transactions || []).every(t => t.status === 'paid');
@@ -473,6 +473,9 @@ function PendingPeriodCard({ period, onToggleTx, onConfirm, onRecalculate, worki
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+            <button className="btn btn-secondary btn-sm" onClick={onResetToActive} disabled={working} title="Discard calculations and return to active">
+              ↩️ Back to Active
+            </button>
             <button className="btn btn-secondary btn-sm" onClick={onRecalculate} disabled={working}>
               🔄 Recalculate
             </button>
@@ -497,7 +500,7 @@ function PendingPeriodCard({ period, onToggleTx, onConfirm, onRecalculate, worki
 }
 
 // ─── Settled period card ──────────────────────────────────────────────────────
-function SettledPeriodCard({ period }) {
+function SettledPeriodCard({ period, onReopen, onDelete, working }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -558,6 +561,27 @@ function SettledPeriodCard({ period }) {
               🎉 Was balanced — no payments were needed
             </div>
           )}
+
+          {/* Authority Actions: Reopen / Reset Settlement & Delete */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, paddingTop: 12, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-secondary btn-sm flex-1"
+              style={{ color: '#f59e0b', borderColor: 'rgba(245, 158, 11, 0.4)', fontWeight: 600 }}
+              onClick={(e) => { e.stopPropagation(); onReopen(); }}
+              disabled={working}
+              title="Reset settlement back to active so you can fix errors and recalculate"
+            >
+              🔄 Reset / Reopen Settlement
+            </button>
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              disabled={working}
+              title="Delete this period (meals will be unassigned and kept)"
+            >
+              🗑️
+            </button>
+          </div>
         </div>
       )}
     </div>
