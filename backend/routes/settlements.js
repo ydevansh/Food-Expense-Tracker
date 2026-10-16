@@ -3,6 +3,7 @@ const router     = express.Router();
 const Settlement = require('../models/Settlement');
 const User       = require('../models/User');
 const { getBalances, generateSettlementTransactions } = require('../helpers/calculations');
+const { requireAdmin } = require('../middleware/auth');
 
 function serializeSettlement(s, balances) {
   const obj = s.toObject ? s.toObject() : s;
@@ -54,8 +55,8 @@ router.get('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/settlements — create new settlement
-router.post('/', async (req, res) => {
+// POST /api/settlements — create new settlement (Admin only)
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const { start_date, startDate, end_date, endDate } = req.body;
     const sDate = startDate || start_date;
@@ -82,8 +83,8 @@ router.post('/', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 
-// PUT /api/settlements/:id/transactions/:txId — mark paid/unpaid
-router.put('/:id/transactions/:txId', async (req, res) => {
+// PUT /api/settlements/:id/transactions/:txId — mark paid/unpaid (Admin only)
+router.put('/:id/transactions/:txId', requireAdmin, async (req, res) => {
   try {
     const { id, txId } = req.params;
     const { status }   = req.body;
@@ -107,8 +108,8 @@ router.put('/:id/transactions/:txId', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// DELETE /api/settlements/:id
-router.delete('/:id', async (req, res) => {
+// DELETE /api/settlements/:id (Admin only)
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const s = await Settlement.findByIdAndDelete(req.params.id);
     if (!s) return res.status(404).json({ error: 'Settlement not found' });
