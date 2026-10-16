@@ -4,7 +4,7 @@ import api from '../api';
 import { fmt, today } from '../utils';
 
 export default function Settings() {
-  const { showToast } = useApp();
+  const { showToast, isAdmin, navigate } = useApp();
   const [settings,  setSettings]  = useState([]);
   const [current,   setCurrent]   = useState({ breakfast: 50, dinner: 70 });
   const [form,      setForm]      = useState({ meal_type: 'breakfast', price: '', effective_from: today() });
@@ -61,41 +61,59 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Update Price */}
+          {/* Update Price (Admin Only) */}
           <div>
             <div className="section-title">Update Price</div>
             <div className="mt-8 card-elevated">
-              <div className="info-box" style={{ marginBottom: 14 }}>
-                Price changes only apply from the effective date. Old records are <strong>never</strong> changed.
-              </div>
-              <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div className="form-group">
-                  <label className="form-label">Meal Type</label>
-                  <div className="radio-group">
-                    <label className={`radio-pill ${form.meal_type === 'breakfast' ? 'selected' : ''}`}>
-                      <input type="radio" value="breakfast" checked={form.meal_type === 'breakfast'} onChange={e => setForm(f => ({ ...f, meal_type: e.target.value }))} />
-                      🌅 Breakfast
-                    </label>
-                    <label className={`radio-pill ${form.meal_type === 'dinner' ? 'selected' : ''}`}>
-                      <input type="radio" value="dinner" checked={form.meal_type === 'dinner'} onChange={e => setForm(f => ({ ...f, meal_type: e.target.value }))} />
-                      🌙 Dinner
-                    </label>
+              {isAdmin ? (
+                <>
+                  <div className="info-box" style={{ marginBottom: 14 }}>
+                    Price changes only apply from the effective date. Old records are <strong>never</strong> changed.
                   </div>
+                  <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div className="form-group">
+                      <label className="form-label">Meal Type</label>
+                      <div className="radio-group">
+                        <label className={`radio-pill ${form.meal_type === 'breakfast' ? 'selected' : ''}`}>
+                          <input type="radio" value="breakfast" checked={form.meal_type === 'breakfast'} onChange={e => setForm(f => ({ ...f, meal_type: e.target.value }))} />
+                          🌅 Breakfast
+                        </label>
+                        <label className={`radio-pill ${form.meal_type === 'dinner' ? 'selected' : ''}`}>
+                          <input type="radio" value="dinner" checked={form.meal_type === 'dinner'} onChange={e => setForm(f => ({ ...f, meal_type: e.target.value }))} />
+                          🌙 Dinner
+                        </label>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">New Price (₹ per plate)</label>
+                      <input type="number" className="form-input" placeholder="e.g. 60" min="1" step="0.5"
+                        value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} required />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Effective From</label>
+                      <input type="date" className="form-input" value={form.effective_from}
+                        onChange={e => setForm(f => ({ ...f, effective_from: e.target.value }))} required />
+                    </div>
+                    <button type="submit" className="btn btn-primary btn-full" disabled={saving}>
+                      {saving ? 'Saving...' : '💾 Save New Price'}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '16px 8px' }}>
+                  <div style={{ fontSize: 24, marginBottom: 8 }}>🔒</div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 12 }}>
+                    Price updates are restricted to administrators. Public visitors have read-only access.
+                  </p>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => navigate('/admin/login')}
+                    style={{ background: 'rgba(99, 102, 241, 0.15)', borderColor: 'rgba(99, 102, 241, 0.4)', color: '#a5b4fc', fontWeight: 600 }}
+                  >
+                    🔐 Log In as Admin
+                  </button>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">New Price (₹ per plate)</label>
-                  <input type="number" className="form-input" placeholder="e.g. 60" min="1" step="0.5"
-                    value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Effective From</label>
-                  <input type="date" className="form-input" value={form.effective_from}
-                    onChange={e => setForm(f => ({ ...f, effective_from: e.target.value }))} required />
-                </div>
-                <button type="submit" className="btn btn-primary btn-full" disabled={saving}>
-                  {saving ? 'Saving...' : '💾 Save New Price'}
-                </button>
-              </form>
+              )}
             </div>
           </div>
         </div>

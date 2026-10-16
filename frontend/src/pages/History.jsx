@@ -8,7 +8,7 @@ import { fmt } from '../utils';
 const USERS_FILTER = [{ value: '', label: 'All People' }];
 
 export default function History() {
-  const { users, showToast, showModal, closeModal } = useApp();
+  const { users, showToast, showModal, closeModal, isAdmin } = useApp();
   const navigate = useNavigate();
 
   const [meals,   setMeals]   = useState([]);
@@ -148,8 +148,8 @@ export default function History() {
                     key={meal._id || meal.id}
                     meal={meal}
                     users={users}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
+                    onEdit={isAdmin ? handleEdit : undefined}
+                    onDelete={isAdmin ? handleDelete : undefined}
                   />
                 ))}
               </div>

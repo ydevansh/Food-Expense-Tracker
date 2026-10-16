@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import api from '../api';
 import MealCard from '../components/MealCard';
 import { fmt, today, daysInMonth, firstDayOfMonth } from '../utils';
 
 export default function CalendarPage() {
-  const { users, showModal, closeModal } = useApp();
+  const { users, showModal, closeModal, isAdmin, showToast } = useApp();
+  const navigate = useNavigate();
   const now   = new Date();
   const [year,  setYear]  = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -35,13 +37,52 @@ export default function CalendarPage() {
     else setMonth(m => m + 1);
   };
 
+  const handleEditMeal = (meal) => {
+    closeModal();
+    navigate(`/add/${meal._id || meal.id}`);
+  };
+
+  const handleDeleteMeal = async (meal) => {
+    try {
+      await api.deleteMeal(meal._id || meal.id);
+      showToast('Meal deleted!');
+      closeModal();
+      loadMonth(year, month);
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to delete', 'error');
+    }
+  };
+
   const openDay = async (dateStr) => {
     try {
       const data = await api.getDaily(dateStr);
       showModal({
         title: fmt.date(dateStr),
-        body: <DayDetail data={data} users={users} />,
-        footer: <button className="btn btn-secondary btn-full" onClick={closeModal}>Close</button>
+        body: (
+          <DayDetail
+            data={data}
+            users={users}
+            isAdmin={isAdmin}
+            onEdit={handleEditMeal}
+            onDelete={handleDeleteMeal}
+          />
+        ),
+        footer: (
+          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+            <button className="btn btn-secondary flex-1" onClick={closeModal}>Close</button>
+            {isAdmin && (
+              <button
+                className="btn btn-primary flex-1"
+                onClick={() => {
+                  closeModal();
+                  navigate('/add');
+                }}
+              >
+                + Add Meal
+              </button>
+            )}
+          </div>
+        )
       });
     } catch (err) { console.error(err); }
   };
@@ -58,71 +99,70 @@ export default function CalendarPage() {
       {/* Navigation */}
       <div className="calendar-nav">
         <button className="calendar-nav-btn" onClick={prevMonth}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div className="calendar-month">{fmt.monthYear(year, month)}</div>
+        <span className="calendar-month-title">
+          {new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
+        </span>
         <button className="calendar-nav-btn" onClick={nextMonth}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
 
-      {/* Weekday headers */}
-      <div className="calendar-weekdays">
-        {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
-          <div key={d} className="weekday">{d}</div>
-        ))}
-      </div>
-
-      {/* Grid */}
       {loading ? (
-        <div className="page-loader" style={{ padding: 40 }}>
-          <div className="loader-spinner" />
-        </div>
+        <div className="page-loader"><div className="loader-spinner" /></div>
       ) : (
-        <div className="calendar-grid">
-          {cells.map((day, i) => {
-            if (!day) return <div key={`e-${i}`} className="cal-day empty" />;
-            const mm  = String(month).padStart(2, '0');
-            const dd  = String(day).padStart(2, '0');
-            const str = `${year}-${mm}-${dd}`;
-            const info = calData[str];
-            const isToday = str === todayStr;
+        <>
+          {/* Day-of-week header */}
+          <div className="calendar-grid">
+            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+              <div key={d} className="calendar-day-header">{d}</div>
+            ))}
 
-            return (
-              <div
-                key={str}
-                className={`cal-day ${isToday ? 'today' : ''} ${info ? 'has-data' : ''}`}
-                onClick={() => info && openDay(str)}
-                style={{ cursor: info ? 'pointer' : 'default' }}
-              >
-                <span className="cal-day-num">{day}</span>
-                {info && (
-                  <div className="cal-dots">
-                    {info.breakfast && <span className="cal-dot breakfast" title="Breakfast" />}
-                    {info.dinner    && <span className="cal-dot dinner"    title="Dinner"    />}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+            {/* Days */}
+            {cells.map((day, idx) => {
+              if (!day) return <div key={`empty-${idx}`} className="calendar-day empty" />;
+              const mm  = String(month).padStart(2, '0');
+              const dd  = String(day).padStart(2, '0');
+              const ds  = `${year}-${mm}-${dd}`;
+              const has = calData[ds];
+              const isToday = ds === todayStr;
+
+              return (
+                <div
+                  key={ds}
+                  className={`calendar-day ${has ? 'has-meals' : ''} ${isToday ? 'today' : ''}`}
+                  onClick={() => openDay(ds)}
+                >
+                  <span className="day-number">{day}</span>
+                  {has && (
+                    <div className="day-dots">
+                      {has.has_breakfast && <span className="day-dot breakfast" title="Breakfast" />}
+                      {has.has_dinner    && <span className="day-dot dinner"    title="Dinner" />}
+                    </div>
+                  )}
+                  {has && has.total_amount > 0 && (
+                    <span className="day-amount">{fmt.currency(has.total_amount)}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="calendar-legend">
+            <span className="legend-item"><span className="legend-dot breakfast" /> Breakfast</span>
+            <span className="legend-item"><span className="legend-dot dinner" /> Dinner</span>
+            <span className="legend-item"><span className="legend-dot today-dot" /> Today</span>
+          </div>
+        </>
       )}
-
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, padding: '16px 0', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
-          <span className="cal-dot breakfast" /> Breakfast
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
-          <span className="cal-dot dinner" /> Dinner
-        </div>
-      </div>
     </div>
   );
 }
 
 // Day detail modal body
-function DayDetail({ data, users }) {
+function DayDetail({ data, users, isAdmin, onEdit, onDelete }) {
   const { meals, day_total, user_summary } = data;
   return (
     <div className="day-detail">
@@ -130,7 +170,14 @@ function DayDetail({ data, users }) {
         <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>No meals recorded</p>
       ) : (
         meals.map(meal => (
-          <MealCard key={meal._id || meal.id} meal={meal} users={users} showDate={false} />
+          <MealCard
+            key={meal._id || meal.id}
+            meal={meal}
+            users={users}
+            showDate={false}
+            onEdit={isAdmin ? () => onEdit(meal) : undefined}
+            onDelete={isAdmin ? () => onDelete(meal) : undefined}
+          />
         ))
       )}
 
