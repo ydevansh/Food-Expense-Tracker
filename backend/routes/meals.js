@@ -4,6 +4,7 @@ const Meal     = require('../models/Meal');
 const User     = require('../models/User');
 const SettlementPeriod = require('../models/SettlementPeriod');
 const { calculateShares, getPriceForDate, getActivePeriod } = require('../helpers/calculations');
+const { requireAdmin } = require('../middleware/auth');
 
 /** Serialize a Meal mongoose doc to a flat, frontend-friendly object */
 function serializeMeal(meal) {
@@ -93,8 +94,8 @@ router.get('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/meals — create
-router.post('/', async (req, res) => {
+// POST /api/meals — create (Admin only)
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const {
       date, meal_type, mealType,
@@ -155,8 +156,8 @@ router.post('/', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 
-// PUT /api/meals/:id — update
-router.put('/:id', async (req, res) => {
+// PUT /api/meals/:id — update (Admin only)
+router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const meal = await Meal.findById(req.params.id);
     if (!meal) return res.status(404).json({ error: 'Meal not found' });
@@ -226,8 +227,8 @@ router.put('/:id', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 
-// DELETE /api/meals/:id
-router.delete('/:id', async (req, res) => {
+// DELETE /api/meals/:id (Admin only)
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const meal = await Meal.findById(req.params.id);
     if (!meal) return res.status(404).json({ error: 'Meal not found' });

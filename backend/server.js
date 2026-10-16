@@ -1,12 +1,14 @@
 require('dotenv').config();
 const express   = require('express');
 const cors      = require('cors');
-const connectDB = require('./config/db');
+const cookieParser     = require('cookie-parser');
+const connectDB        = require('./config/db');
 const User             = require('./models/User');
 const PriceSetting     = require('./models/PriceSetting');
 const Meal             = require('./models/Meal');
 const SettlementPeriod = require('./models/SettlementPeriod');
 const Settlement       = require('./models/Settlement');
+const Admin            = require('./models/Admin');
 const { buildPeriodLabel } = require('./helpers/calculations');
 
 const app  = express();
@@ -18,8 +20,10 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+app.use('/api/auth',        require('./routes/auth'));        // Admin authentication
 app.use('/api/users',       require('./routes/users'));
 app.use('/api/settings',    require('./routes/settings'));
 app.use('/api/meals',       require('./routes/meals'));
@@ -36,6 +40,9 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().t
 // ─── Seed Initial Data ────────────────────────────────────────────────────────
 async function seedData() {
   try {
+    // Seed initial admin user if not present
+    await Admin.seedInitialAdmin();
+
     // Seed users
     const userCount = await User.countDocuments();
     if (userCount === 0) {
