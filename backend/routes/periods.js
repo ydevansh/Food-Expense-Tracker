@@ -22,6 +22,7 @@ const {
   getActivePeriod,
   buildPeriodLabel
 } = require('../helpers/calculations');
+const { requireAdmin } = require('../middleware/auth');
 
 // ─── Serializers ──────────────────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ router.get('/:id', async (req, res) => {
 // ─── POST /api/periods ────────────────────────────────────────────────────────
 // Creates a NEW accounting period. Requires no other active period to exist.
 
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const { start_date, startDate, end_date, endDate, label } = req.body;
     const sDate = (startDate || start_date || '').trim();
@@ -168,7 +169,7 @@ router.post('/', async (req, res) => {
 // Calculate (or recalculate) settlement for an active or pending period.
 // Idempotent — safe to call multiple times.
 
-router.post('/:id/calculate', async (req, res) => {
+router.post('/:id/calculate', requireAdmin, async (req, res) => {
   try {
     const period = await SettlementPeriod.findById(req.params.id);
     if (!period)          return res.status(404).json({ error: 'Period not found' });
@@ -214,7 +215,7 @@ router.post('/:id/calculate', async (req, res) => {
 // Confirm that all settlement payments have been made.
 // Freezes the period as 'settled' and stores a permanent balance snapshot.
 
-router.post('/:id/confirm', async (req, res) => {
+router.post('/:id/confirm', requireAdmin, async (req, res) => {
   try {
     const period = await SettlementPeriod.findById(req.params.id);
     if (!period) return res.status(404).json({ error: 'Period not found' });
@@ -249,7 +250,7 @@ router.post('/:id/confirm', async (req, res) => {
 // ─── PUT /api/periods/:id/transactions/:txId ──────────────────────────────────
 // Toggle a single transaction between pending and paid.
 
-router.put('/:id/transactions/:txId', async (req, res) => {
+router.put('/:id/transactions/:txId', requireAdmin, async (req, res) => {
   try {
     const period = await SettlementPeriod.findById(req.params.id);
     if (!period) return res.status(404).json({ error: 'Period not found' });
@@ -272,7 +273,7 @@ router.put('/:id/transactions/:txId', async (req, res) => {
 // Allowed when the period is not settled.
 // If meals are attached, allows unassigning them with unassign_meals=true so no meals are lost.
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const period = await SettlementPeriod.findById(req.params.id);
     if (!period) return res.status(404).json({ error: 'Period not found' });
@@ -306,7 +307,7 @@ router.delete('/:id', async (req, res) => {
 // All meals remain attached — nothing is deleted!
 // If an empty active period exists, passing { force: true } automatically cleans it up.
 
-router.post('/:id/reopen', async (req, res) => {
+router.post('/:id/reopen', requireAdmin, async (req, res) => {
   try {
     const period = await SettlementPeriod.findById(req.params.id);
     if (!period) return res.status(404).json({ error: 'Period not found' });
