@@ -2,6 +2,7 @@ const express      = require('express');
 const router       = express.Router();
 const PriceSetting = require('../models/PriceSetting');
 const { getPriceForDate } = require('../helpers/calculations');
+const { requireAdmin } = require('../middleware/auth');
 
 // GET /api/settings — all price history
 router.get('/', async (req, res) => {
@@ -25,8 +26,8 @@ router.get('/current', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/settings — update price (creates new history entry)
-router.post('/', async (req, res) => {
+// POST /api/settings — update price (creates new history entry — Admin only)
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const { meal_type, mealType, price, effective_from, effectiveFrom } = req.body;
     const setting = await PriceSetting.create({
