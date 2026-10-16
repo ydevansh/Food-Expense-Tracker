@@ -269,50 +269,84 @@ router.put('/:id/transactions/:txId', async (req, res) => {
 });
 
 // ─── DELETE /api/periods/:id ──────────────────────────────────────────────────
-// Only allowed when the period is still active AND has no meals attached.
+// Allowed when the period is not settled.
+// If meals are attached, allows unassigning them with unassign_meals=true so no meals are lost.
 
 router.delete('/:id', async (req, res) => {
   try {
     const period = await SettlementPeriod.findById(req.params.id);
     if (!period) return res.status(404).json({ error: 'Period not found' });
     if (period.status === 'settled')
-      return res.status(400).json({ error: 'Cannot delete a settled period.' });
+      return res.status(400).json({ error: 'Cannot delete a settled period directly. Please reopen it first if you need to adjust or reset it.' });
 
     const mealCount = await Meal.countDocuments({ settlementPeriodId: period._id });
-    if (mealCount > 0)
-      return res.status(400).json({ error: `Cannot delete — ${mealCount} meal(s) are attached to this period. Remove them first.` });
+    const shouldUnassign = req.query.unassign_meals === 'true' || req.body?.unassign_meals === true;
+
+    if (mealCount > 0 && !shouldUnassign) {
+      return res.status(400).json({
+        error: `Cannot delete — ${mealCount} meal(s) are attached to this period.`,
+        hasMeals: true,
+        mealCount
+      });
+    }
+
+    if (mealCount > 0 && shouldUnassign) {
+      await Meal.updateMany({ settlementPeriodId: period._id }, { $set: { settlementPeriodId: null } });
+      console.log(`ℹ️ Unassigned ${mealCount} meal(s) from deleted period ${period.label}`);
+    }
 
     await period.deleteOne();
-    res.json({ success: true, id: req.params.id });
+    res.json({ success: true, id: req.params.id, unassignedMeals: mealCount });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ─── POST /api/periods/:id/reopen ─────────────────────────────────────────────
-// Reverse a settled period back to 'active'.
-// Clears the frozen snapshot + transactions so the period can be recalculated.
-// All meals remain attached — nothing is deleted.
-// Blocked when another active or pending period already exists.
+// Reverse a settled (or pending) period back to 'active'.
+// Clears frozen snapshot + transactions so meals can be edited and settlement recalculated.
+// All meals remain attached — nothing is deleted!
+// If an empty active period exists, passing { force: true } automatically cleans it up.
 
 router.post('/:id/reopen', async (req, res) => {
   try {
     const period = await SettlementPeriod.findById(req.params.id);
     if (!period) return res.status(404).json({ error: 'Period not found' });
 
-    if (period.status !== 'settled')
+    if (period.status !== 'settled' && period.status !== 'pending') {
       return res.status(400).json({
-        error: `Period is currently '${period.status}', not settled. Only settled periods can be reopened.`
+        error: `Period is already '${period.status}'. Only settled or pending periods can be reset to active.`
       });
+    }
 
-    // Block if there is already an active or pending period
+    // Check for another active or pending period
     const conflict = await SettlementPeriod.findOne({
       _id:    { $ne: period._id },
       status: { $in: ['active', 'pending'] }
     });
-    if (conflict)
-      return res.status(409).json({
-        error: `Cannot reopen — there is already an ${conflict.status} period (${conflict.startDate} → ${conflict.endDate}). Settle or delete it first.`,
-        conflictPeriodId: conflict._id
-      });
+
+    if (conflict) {
+      const conflictMeals = await Meal.countDocuments({ settlementPeriodId: conflict._id });
+      const force = req.body?.force === true || req.query.force === 'true';
+
+      if (force) {
+        if (conflictMeals > 0) {
+          return res.status(409).json({
+            error: `Cannot reopen: The current ${conflict.status} period (${conflict.label || conflict.startDate}) already has ${conflictMeals} meal(s) recorded. Please settle or review those meals first.`,
+            conflictPeriodId: conflict._id,
+            conflictMealCount: conflictMeals
+          });
+        }
+        // Conflict active/pending period is empty — remove it so this period can be safely reopened
+        await conflict.deleteOne();
+        console.log(`🗑️ Removed empty active period ${conflict.label} to allow reopening ${period.label}`);
+      } else {
+        return res.status(409).json({
+          error: `There is already an ${conflict.status} period (${conflict.label || conflict.startDate + ' → ' + conflict.endDate}).`,
+          conflictPeriodId: conflict._id,
+          conflictMealCount: conflictMeals,
+          canAutoRemoveConflict: conflictMeals === 0
+        });
+      }
+    }
 
     // Reset to active, wipe snapshot & transactions
     period.status                 = 'active';
@@ -327,7 +361,7 @@ router.post('/:id/reopen', async (req, res) => {
     const users    = await User.find().sort({ createdAt: 1 }).lean();
     const balances = await getBalances(users, null, null, period._id.toString());
 
-    console.log(`🔄 Period reopened: ${period.label}`);
+    console.log(`🔄 Period reopened to active: ${period.label}`);
     res.json(serializePeriod(period, balances));
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
