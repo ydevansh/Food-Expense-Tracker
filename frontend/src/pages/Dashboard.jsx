@@ -6,7 +6,7 @@ import MealCard from '../components/MealCard';
 import { fmt, balanceClass, today } from '../utils';
 
 export default function Dashboard() {
-  const { users, showToast, showModal, closeModal } = useApp();
+  const { users, showToast, showModal, closeModal, isAdmin } = useApp();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -173,10 +173,12 @@ export default function Dashboard() {
               <div className="empty-state">
                 <div className="empty-icon">🍽️</div>
                 <h3>No meals recorded today</h3>
-                <p>Add today's breakfast or dinner to keep balances updated</p>
-                <button className="btn btn-primary mt-8" onClick={() => navigate('/add')}>
-                  + Add Meal
-                </button>
+                <p>Today's breakfast or dinner will appear here once recorded</p>
+                {isAdmin && (
+                  <button className="btn btn-primary mt-8" onClick={() => navigate('/add')}>
+                    + Add Meal
+                  </button>
+                )}
               </div>
             ) : (
               todayMeals.map(meal => (
@@ -184,8 +186,8 @@ export default function Dashboard() {
                   key={meal._id || meal.id}
                   meal={meal}
                   users={users}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
+                  onEdit={isAdmin ? handleEdit : undefined}
+                  onDelete={isAdmin ? handleDelete : undefined}
                 />
               ))
             )}
@@ -196,12 +198,18 @@ export default function Dashboard() {
         <div>
           <div className="section-title">Quick Actions</div>
           <div className="mt-8 dashboard-quick-actions">
-            <button className="btn btn-primary btn-full" onClick={() => navigate('/add')}>
-              ➕ Add New Meal
-            </button>
+            {isAdmin ? (
+              <button className="btn btn-primary btn-full" onClick={() => navigate('/add')}>
+                ➕ Add New Meal
+              </button>
+            ) : (
+              <button className="btn btn-secondary btn-full" onClick={() => navigate('/admin/login')} style={{ background: 'rgba(99, 102, 241, 0.15)', borderColor: 'rgba(99, 102, 241, 0.4)', color: '#a5b4fc', fontWeight: 600 }}>
+                🔐 Administrator Login
+              </button>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <button className="btn btn-secondary" onClick={() => navigate('/settlement')}>
-                💰 {hasActivePeriod ? 'Settle Up' : 'Periods'}
+                💰 {isAdmin ? (hasActivePeriod ? 'Settle Up' : 'Periods') : 'Settlements'}
               </button>
               <button className="btn btn-secondary" onClick={() => navigate('/reports')}>
                 📊 Reports
@@ -209,8 +217,8 @@ export default function Dashboard() {
               <button className="btn btn-secondary" onClick={() => navigate('/calendar')}>
                 📅 Calendar
               </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/settings')}>
-                ⚙️ Settings
+              <button className="btn btn-secondary" onClick={() => navigate(isAdmin ? '/admin' : '/history')}>
+                {isAdmin ? '🛡️ Admin Panel' : '📜 History'}
               </button>
             </div>
           </div>

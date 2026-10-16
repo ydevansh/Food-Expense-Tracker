@@ -1,33 +1,45 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-
-const NAV_ITEMS = [
-  { path: '/',           label: 'Dashboard',  icon: '📊' },
-  { path: '/calendar',   label: 'Calendar',   icon: '📅' },
-  { path: '/add',        label: 'Add Expense',icon: '➕' },
-  { path: '/history',    label: 'History',    icon: '📜' },
-  { path: '/settlement', label: 'Settlement', icon: '💰' },
-  { path: '/reports',    label: 'Reports',    icon: '📈' },
-  { path: '/settings',   label: 'Settings',   icon: '⚙️' },
-];
+import { useApp } from '../App';
 
 export default function Header({ title }) {
+  const { admin, isAdmin, logoutAdmin, showToast } = useApp();
   const navigate  = useNavigate();
   const location  = useLocation();
   const path      = location.pathname;
-  const showBack  = path !== '/';
+  const showBack  = path !== '/' && path !== '/admin';
 
   const isActive = (p) => path === p || (p !== '/' && path.startsWith(p));
+
+  // Public navigation vs Admin navigation
+  const navItems = isAdmin ? [
+    { path: '/',           label: 'Dashboard',   icon: '📊' },
+    { path: '/calendar',   label: 'Calendar',    icon: '📅' },
+    { path: '/add',        label: 'Add Expense', icon: '➕' },
+    { path: '/history',    label: 'History',     icon: '📜' },
+    { path: '/settlement', label: 'Settlement',  icon: '💰' },
+    { path: '/reports',    label: 'Reports',     icon: '📈' },
+    { path: '/settings',   label: 'Settings',    icon: '⚙️' },
+    { path: '/admin',      label: 'Admin Panel', icon: '🛡️' },
+  ] : [
+    { path: '/',           label: 'Dashboard',   icon: '📊' },
+    { path: '/calendar',   label: 'Calendar',    icon: '📅' },
+    { path: '/history',    label: 'History',     icon: '📜' },
+    { path: '/reports',    label: 'Reports',     icon: '📈' },
+    { path: '/admin/login',label: 'Admin Login', icon: '🔐' },
+  ];
 
   return (
     <header className="app-header">
       <div className="header-inner">
         {/* Left: Logo & Back */}
-        <div className="header-brand" onClick={() => navigate('/')}>
+        <div className="header-brand" onClick={() => navigate(isAdmin ? '/admin' : '/')}>
           <span className="header-logo">🍽️</span>
           <span className="brand-text">
             <span className="brand-title">Food Expense Tracker</span>
-            <span className="brand-badge">3 Roommates</span>
+            <span className="brand-badge">
+              {isAdmin ? '🛡️ Admin Mode' : '3 Roommates'}
+            </span>
           </span>
         </div>
 
@@ -45,7 +57,7 @@ export default function Header({ title }) {
 
         {/* Desktop Navigation Links */}
         <nav className="desktop-nav" aria-label="Desktop navigation">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = isActive(item.path);
             return (
               <button
@@ -63,28 +75,62 @@ export default function Header({ title }) {
 
         {/* Right: Actions */}
         <div className="header-actions">
-          <button
-            className="btn btn-primary btn-sm desktop-add-btn"
-            onClick={() => navigate('/add')}
-          >
-            + Add Expense
-          </button>
-
-          {path === '/' && (
+          {isAdmin ? (
             <>
-              <button className="btn btn-ghost btn-sm mobile-action-btn" onClick={() => navigate('/settings')} title="Settings">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                </svg>
+              <button
+                className="btn btn-primary btn-sm desktop-add-btn"
+                onClick={() => navigate('/add')}
+              >
+                + Add Expense
               </button>
-              <button className="btn btn-ghost btn-sm mobile-action-btn" onClick={() => navigate('/reports')} title="Reports">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-                  <line x1="6" y1="20" x2="6" y2="14"/>
-                </svg>
+
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => navigate('/admin')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 12px',
+                  background: 'rgba(99, 102, 241, 0.15)',
+                  border: '1px solid rgba(99, 102, 241, 0.3)',
+                  borderRadius: 20
+                }}
+                title="Open Admin Panel"
+              >
+                <span>🛡️</span>
+                <span style={{ fontWeight: 600, fontSize: 13, color: '#a5b4fc' }}>
+                  {admin?.username || 'Admin'}
+                </span>
+              </button>
+
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={async () => {
+                  await logoutAdmin();
+                  showToast('Logged out');
+                  navigate('/');
+                }}
+                title="Sign out of admin"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                🚪
               </button>
             </>
+          ) : (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => navigate('/admin/login')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontWeight: 600
+              }}
+            >
+              <span>🔐</span>
+              <span>Admin Login</span>
+            </button>
           )}
         </div>
       </div>
