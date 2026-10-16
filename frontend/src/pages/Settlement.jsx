@@ -458,7 +458,7 @@ function ActivePeriodCard({ period, onCalculate, onDelete, working, isAdmin }) {
 }
 
 // ─── Pending period card ──────────────────────────────────────────────────────
-function PendingPeriodCard({ period, onToggleTx, onConfirm, onRecalculate, onResetToActive, working }) {
+function PendingPeriodCard({ period, onToggleTx, onConfirm, onRecalculate, onResetToActive, working, isAdmin }) {
   const [open, setOpen] = useState(true);
 
   const allPaid = (period.transactions || []).every(t => t.status === 'paid');
@@ -507,35 +507,43 @@ function PendingPeriodCard({ period, onToggleTx, onConfirm, onRecalculate, onRes
                     <span className="tx-to">{tx.to_user_name}</span>
                   </div>
                   <span className="tx-amount">{fmt.currency(tx.amount)}</span>
-                  <button
-                    className={`btn btn-sm ${tx.status === 'paid' ? 'btn-secondary' : 'btn-primary'}`}
-                    style={{ minWidth: 88 }}
-                    onClick={() => onToggleTx(tx)}
-                  >
-                    {tx.status === 'paid' ? '✓ Paid' : 'Mark Paid'}
-                  </button>
+                  {isAdmin ? (
+                    <button
+                      className={`btn btn-sm ${tx.status === 'paid' ? 'btn-secondary' : 'btn-primary'}`}
+                      style={{ minWidth: 88 }}
+                      onClick={() => onToggleTx(tx)}
+                    >
+                      {tx.status === 'paid' ? '✓ Paid' : 'Mark Paid'}
+                    </button>
+                  ) : (
+                    <span className={`status-badge ${tx.status === 'paid' ? 'settled' : 'pending'}`} style={{ fontSize: 11 }}>
+                      {tx.status === 'paid' ? '✓ Paid' : '⏳ Pending'}
+                    </span>
+                  )}
                 </div>
               ))
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary btn-sm" onClick={onResetToActive} disabled={working} title="Discard calculations and return to active">
-              ↩️ Back to Active
-            </button>
-            <button className="btn btn-secondary btn-sm" onClick={onRecalculate} disabled={working}>
-              🔄 Recalculate
-            </button>
-            <button
-              className="btn btn-primary flex-1"
-              onClick={onConfirm}
-              disabled={working}
-            >
-              {working ? 'Working...' : '✅ Confirm — All Paid & Settle'}
-            </button>
-          </div>
+          {isAdmin && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              <button className="btn btn-secondary btn-sm" onClick={onResetToActive} disabled={working} title="Discard calculations and return to active">
+                ↩️ Back to Active
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={onRecalculate} disabled={working}>
+                🔄 Recalculate
+              </button>
+              <button
+                className="btn btn-primary flex-1"
+                onClick={onConfirm}
+                disabled={working}
+              >
+                {working ? 'Working...' : '✅ Confirm — All Paid & Settle'}
+              </button>
+            </div>
+          )}
 
-          {!allPaid && (period.transactions || []).length > 0 && (
+          {!allPaid && (period.transactions || []).length > 0 && isAdmin && (
             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, textAlign: 'center' }}>
               You can confirm even if not all transactions are individually marked — confirmation archives the period.
             </div>
@@ -547,7 +555,7 @@ function PendingPeriodCard({ period, onToggleTx, onConfirm, onRecalculate, onRes
 }
 
 // ─── Settled period card ──────────────────────────────────────────────────────
-function SettledPeriodCard({ period, onReopen, onDelete, working }) {
+function SettledPeriodCard({ period, onReopen, onDelete, working, isAdmin }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -609,26 +617,28 @@ function SettledPeriodCard({ period, onReopen, onDelete, working }) {
             </div>
           )}
 
-          {/* Authority Actions: Reopen / Reset Settlement & Delete */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 8, paddingTop: 12, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
-            <button
-              className="btn btn-secondary btn-sm flex-1"
-              style={{ color: '#f59e0b', borderColor: 'rgba(245, 158, 11, 0.4)', fontWeight: 600 }}
-              onClick={(e) => { e.stopPropagation(); onReopen(); }}
-              disabled={working}
-              title="Reset settlement back to active so you can fix errors and recalculate"
-            >
-              🔄 Reset / Reopen Settlement
-            </button>
-            <button
-              className="btn btn-danger btn-sm"
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              disabled={working}
-              title="Delete this period (meals will be unassigned and kept)"
-            >
-              🗑️
-            </button>
-          </div>
+          {/* Authority Actions: Reopen / Reset Settlement & Delete (Admin Only) */}
+          {isAdmin && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, paddingTop: 12, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-secondary btn-sm flex-1"
+                style={{ color: '#f59e0b', borderColor: 'rgba(245, 158, 11, 0.4)', fontWeight: 600 }}
+                onClick={(e) => { e.stopPropagation(); onReopen(); }}
+                disabled={working}
+                title="Reset settlement back to active so you can fix errors and recalculate"
+              >
+                🔄 Reset / Reopen Settlement
+              </button>
+              <button
+                className="btn btn-danger btn-sm"
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                disabled={working}
+                title="Delete this period (meals will be unassigned and kept)"
+              >
+                🗑️
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
