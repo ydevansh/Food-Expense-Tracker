@@ -287,4 +287,49 @@ router.delete('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ─── POST /api/periods/:id/reopen ─────────────────────────────────────────────
+// Reverse a settled period back to 'active'.
+// Clears the frozen snapshot + transactions so the period can be recalculated.
+// All meals remain attached — nothing is deleted.
+// Blocked when another active or pending period already exists.
+
+router.post('/:id/reopen', async (req, res) => {
+  try {
+    const period = await SettlementPeriod.findById(req.params.id);
+    if (!period) return res.status(404).json({ error: 'Period not found' });
+
+    if (period.status !== 'settled')
+      return res.status(400).json({
+        error: `Period is currently '${period.status}', not settled. Only settled periods can be reopened.`
+      });
+
+    // Block if there is already an active or pending period
+    const conflict = await SettlementPeriod.findOne({
+      _id:    { $ne: period._id },
+      status: { $in: ['active', 'pending'] }
+    });
+    if (conflict)
+      return res.status(409).json({
+        error: `Cannot reopen — there is already an ${conflict.status} period (${conflict.startDate} → ${conflict.endDate}). Settle or delete it first.`,
+        conflictPeriodId: conflict._id
+      });
+
+    // Reset to active, wipe snapshot & transactions
+    period.status                 = 'active';
+    period.settledAt              = null;
+    period.settlementCalculatedAt = null;
+    period.totalExpense           = null;
+    period.balanceSnapshot        = [];
+    period.transactions           = [];
+
+    await period.save();
+
+    const users    = await User.find().sort({ createdAt: 1 }).lean();
+    const balances = await getBalances(users, null, null, period._id.toString());
+
+    console.log(`🔄 Period reopened: ${period.label}`);
+    res.json(serializePeriod(period, balances));
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
