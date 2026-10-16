@@ -41,9 +41,10 @@ const api = {
   createPeriod:        (data)   => http.post('/periods', data).then(r => r.data),
   calculatePeriod:     (id)     => http.post(`/periods/${id}/calculate`).then(r => r.data),
   confirmPeriod:       (id)     => http.post(`/periods/${id}/confirm`).then(r => r.data),
+  reopenPeriod:        (id, data = {}) => http.post(`/periods/${id}/reopen`, data).then(r => r.data),
   updatePeriodTx:      (periodId, txId, status) =>
     http.put(`/periods/${periodId}/transactions/${txId}`, { status }).then(r => r.data),
-  deletePeriod:        (id)     => http.delete(`/periods/${id}`).then(r => r.data),
+  deletePeriod:        (id, params = {}) => http.delete(`/periods/${id}`, { params }).then(r => r.data),
 
   // ── Settlements (legacy — kept for backward compatibility) ─────
   getSettlements:  ()      => http.get('/settlements').then(r => r.data),

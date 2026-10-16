@@ -167,25 +167,104 @@ export default function Settlement() {
     } catch { showToast('Update failed', 'error'); }
   };
 
+  // ── Reopen / Reset Settled Period ──────────────────────────────────────────
+  const reopenPeriod = (period) => {
+    const currentActiveOrPending = periods.find(p => p.status === 'active' || p.status === 'pending');
+
+    showModal({
+      title: '🔄 Reset Settlement & Reopen Period',
+      body: (
+        <div>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>
+            Do you want to reset the settlement for <strong>{period.label}</strong> back to <strong>Active</strong>?
+          </p>
+          <div style={{ background: 'var(--bg-card)', borderRadius: 10, padding: '12px 14px', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+            <div style={{ color: 'var(--green)', fontWeight: 600 }}>
+              ✓ All meal records, breakfast/dinner plates, and payments remain preserved.
+            </div>
+            <div style={{ color: 'var(--text-muted)' }}>
+              • The archived balance snapshot and transactions will be cleared.
+            </div>
+            <div style={{ color: 'var(--text-muted)' }}>
+              • You can edit meals, add missing items, fix prices, and recalculate settlement whenever ready.
+            </div>
+          </div>
+          {currentActiveOrPending && (
+            <div style={{ background: 'rgba(234, 179, 8, 0.12)', border: '1px solid rgba(234, 179, 8, 0.3)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: 'var(--yellow)' }}>
+              ⚠️ Note: <strong>{currentActiveOrPending.label}</strong> is currently {currentActiveOrPending.status}. If it has no meals yet, it will be automatically removed so this period can become active.
+            </div>
+          )}
+        </div>
+      ),
+      footer: (
+        <>
+          <button className="btn btn-secondary flex-1" onClick={closeModal}>Cancel</button>
+          <button
+            className="btn btn-danger flex-1"
+            style={{ background: '#f59e0b', borderColor: '#f59e0b', color: '#000', fontWeight: 700 }}
+            onClick={async () => {
+              closeModal();
+              setWorking(true);
+              try {
+                await api.reopenPeriod(period._id || period.id, { force: true });
+                showToast(`Settlement reset! ${period.label} is now active.`);
+                load();
+              } catch (err) {
+                showToast(err.response?.data?.error || 'Failed to reset settlement', 'error');
+              } finally {
+                setWorking(false);
+              }
+            }}
+          >
+            Reset to Active
+          </button>
+        </>
+      )
+    });
+  };
+
+  // ── Reset Pending to Active ─────────────────────────────────────────────────
+  const resetPendingToActive = async (period) => {
+    setWorking(true);
+    try {
+      await api.reopenPeriod(period._id || period.id);
+      showToast('Settlement calculation discarded. Period returned to Active.');
+      load();
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to reset to active', 'error');
+    } finally {
+      setWorking(false);
+    }
+  };
+
   // ── Delete period ───────────────────────────────────────────────────────────
   const deletePeriod = (period) => {
     showModal({
-      title: 'Delete Period',
-      body: <p style={{ color: 'var(--text-secondary)' }}>
-        Delete the period <strong>{period.label}</strong>? This only works if no meals are attached.
-      </p>,
+      title: '🗑️ Delete Period',
+      body: (
+        <div>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>
+            Delete the period <strong>{period.label}</strong> ({period.status})?
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            Any attached meals will be kept safely and unassigned so you can attach them to a new period.
+          </p>
+        </div>
+      ),
       footer: (
         <>
           <button className="btn btn-secondary flex-1" onClick={closeModal}>Cancel</button>
           <button className="btn btn-danger flex-1" onClick={async () => {
+            closeModal();
+            setWorking(true);
             try {
-              await api.deletePeriod(period._id || period.id);
-              showToast('Deleted');
-              closeModal();
+              await api.deletePeriod(period._id || period.id, { unassign_meals: true });
+              showToast('Period deleted (meals preserved)');
               load();
             } catch (err) {
               showToast(err.response?.data?.error || 'Delete failed', 'error');
-              closeModal();
+            } finally {
+              setWorking(false);
             }
           }}>Delete</button>
         </>
@@ -218,6 +297,7 @@ export default function Settlement() {
           onToggleTx={(tx) => toggleTransaction(pendingPeriod, tx)}
           onConfirm={() => confirmSettlement(pendingPeriod)}
           onRecalculate={() => calculatePeriod(pendingPeriod)}
+          onResetToActive={() => resetPendingToActive(pendingPeriod)}
           working={working}
         />
       )}
@@ -255,7 +335,13 @@ export default function Settlement() {
           <div className="section-title">📂 Settled History</div>
           <div className="mt-8 settlement-grid">
             {settledPeriods.map(p => (
-              <SettledPeriodCard key={p._id || p.id} period={p} />
+              <SettledPeriodCard
+                key={p._id || p.id}
+                period={p}
+                onReopen={() => reopenPeriod(p)}
+                onDelete={() => deletePeriod(p)}
+                working={working}
+              />
             ))}
           </div>
         </div>
