@@ -34,7 +34,18 @@ const api = {
   // ── Reports ────────────────────────────────────────────────────
   getReports: (params)     => http.get('/reports', { params }).then(r => r.data),
 
-  // ── Settlements ────────────────────────────────────────────────
+  // ── Settlement Periods (new lifecycle API) ─────────────────────
+  getPeriods:          ()       => http.get('/periods').then(r => r.data),
+  getActivePeriod:     ()       => http.get('/periods/active').then(r => r.data),
+  getPeriod:           (id)     => http.get(`/periods/${id}`).then(r => r.data),
+  createPeriod:        (data)   => http.post('/periods', data).then(r => r.data),
+  calculatePeriod:     (id)     => http.post(`/periods/${id}/calculate`).then(r => r.data),
+  confirmPeriod:       (id)     => http.post(`/periods/${id}/confirm`).then(r => r.data),
+  updatePeriodTx:      (periodId, txId, status) =>
+    http.put(`/periods/${periodId}/transactions/${txId}`, { status }).then(r => r.data),
+  deletePeriod:        (id)     => http.delete(`/periods/${id}`).then(r => r.data),
+
+  // ── Settlements (legacy — kept for backward compatibility) ─────
   getSettlements:  ()      => http.get('/settlements').then(r => r.data),
   getSettlement:   (id)    => http.get(`/settlements/${id}`).then(r => r.data),
   createSettlement: (data) => http.post('/settlements', data).then(r => r.data),

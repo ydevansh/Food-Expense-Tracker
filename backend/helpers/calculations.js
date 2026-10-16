@@ -1,5 +1,6 @@
-const PriceSetting = require('../models/PriceSetting');
-const Meal         = require('../models/Meal');
+const PriceSetting      = require('../models/PriceSetting');
+const Meal              = require('../models/Meal');
+const SettlementPeriod  = require('../models/SettlementPeriod');
 
 /**
  * Distribute totalAmount among userIds with proper penny rounding.
@@ -30,15 +31,27 @@ async function getPriceForDate(mealType, date) {
 }
 
 /**
- * Compute running balances (share vs paid) for each user within an optional date range.
+ * Compute running balances (share vs paid) for each user.
+ * Scope: EITHER by settlementPeriodId (preferred) OR by date range.
+ *
+ * @param {Array}  users         – User lean docs
+ * @param {string} startDate     – YYYY-MM-DD (inclusive), ignored when periodId provided
+ * @param {string} endDate       – YYYY-MM-DD (inclusive), ignored when periodId provided
+ * @param {string} periodId      – If set, only meals with this settlementPeriodId are used
  */
-async function getBalances(users, startDate, endDate) {
-  const query = {};
-  if (startDate || endDate) {
+async function getBalances(users, startDate, endDate, periodId) {
+  let query = {};
+
+  if (periodId) {
+    // Primary path: scope to the period
+    query.settlementPeriodId = periodId;
+  } else if (startDate || endDate) {
+    // Legacy / report path: use date range
     query.date = {};
     if (startDate) query.date.$gte = startDate;
     if (endDate)   query.date.$lte = endDate;
   }
+
   const meals = await Meal.find(query).lean();
 
   return users.map(user => {
@@ -95,4 +108,32 @@ function generateSettlementTransactions(balances) {
   return transactions;
 }
 
-module.exports = { calculateShares, getPriceForDate, getBalances, generateSettlementTransactions };
+/**
+ * Return the currently active SettlementPeriod, or null if none exists.
+ */
+async function getActivePeriod() {
+  return SettlementPeriod.findOne({ status: 'active' }).sort({ startDate: -1 });
+}
+
+/**
+ * Build a human-readable label for a period, e.g. "October 1–15, 2026"
+ */
+function buildPeriodLabel(startDate, endDate) {
+  const months = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+  const [sy, sm, sd] = startDate.split('-').map(Number);
+  const [, em, ed]   = endDate.split('-').map(Number);
+  if (sm === em) {
+    return `${months[sm - 1]} ${sd}–${ed}, ${sy}`;
+  }
+  return `${months[sm - 1]} ${sd} – ${months[em - 1]} ${ed}, ${sy}`;
+}
+
+module.exports = {
+  calculateShares,
+  getPriceForDate,
+  getBalances,
+  generateSettlementTransactions,
+  getActivePeriod,
+  buildPeriodLabel
+};

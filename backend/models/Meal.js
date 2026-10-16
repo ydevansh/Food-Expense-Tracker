@@ -15,14 +15,16 @@ const PaymentSchema = new mongoose.Schema({
 }, { _id: false });
 
 const MealSchema = new mongoose.Schema({
-  date:            { type: String, required: true },  // YYYY-MM-DD
-  mealType:        { type: String, enum: ['breakfast', 'dinner'], required: true },
-  pricePerPlate:   { type: Number, required: true },  // snapshot at time of entry
-  numberOfPlates:  { type: Number, required: true, min: 1 },
-  totalAmount:     { type: Number, required: true },
-  notes:           { type: String, default: null },
-  participants:    { type: [ParticipantSchema], default: [] },
-  payments:        { type: [PaymentSchema],     default: [] }
+  date:                { type: String, required: true },  // YYYY-MM-DD
+  mealType:            { type: String, enum: ['breakfast', 'dinner'], required: true },
+  pricePerPlate:       { type: Number, required: true },  // snapshot at time of entry
+  numberOfPlates:      { type: Number, required: true, min: 1 },
+  totalAmount:         { type: Number, required: true },
+  notes:               { type: String, default: null },
+  participants:        { type: [ParticipantSchema], default: [] },
+  payments:            { type: [PaymentSchema],     default: [] },
+  // Links this meal to its accounting period; null only for legacy data (migrated on startup)
+  settlementPeriodId:  { type: mongoose.Schema.Types.ObjectId, ref: 'SettlementPeriod', default: null }
 }, { timestamps: true });
 
 // Indexes for common queries
@@ -30,5 +32,6 @@ MealSchema.index({ date: 1 });
 MealSchema.index({ date: 1, mealType: 1 });
 MealSchema.index({ 'participants.userId': 1 });
 MealSchema.index({ 'payments.userId': 1 });
+MealSchema.index({ settlementPeriodId: 1 });
 
 module.exports = mongoose.model('Meal', MealSchema);

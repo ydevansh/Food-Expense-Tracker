@@ -47,8 +47,9 @@ export default function Dashboard() {
               showToast('Meal deleted successfully');
               closeModal();
               load();
-            } catch {
-              showToast('Failed to delete meal', 'error');
+            } catch (err) {
+              const msg = err?.response?.data?.error || 'Failed to delete meal';
+              showToast(msg, 'error');
             }
           }}>Delete</button>
         </>
@@ -67,45 +68,70 @@ export default function Dashboard() {
 
   if (!data) return null;
 
-  const { month_stats: ms, user_balances: ub, today: todayMeals, today_date } = data;
+  const {
+    period_stats: ps,
+    user_balances: ub,
+    today: todayMeals,
+    today_date,
+    active_period: activePeriod
+  } = data;
+
+  const hasActivePeriod = !!activePeriod;
 
   return (
     <div className="page-section">
-      {/* Hero & Quick Stats Row */}
-      <div className="dashboard-hero-row">
-        <div className="card-gradient">
-          <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
-            This Month
+      {/* ── Period Banner ─────────────────────────────────────────────── */}
+      {hasActivePeriod ? (
+        <div className="card-gradient" style={{ marginBottom: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.75, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 4 }}>
+            🟢 Current Period
           </div>
-          <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 2 }}>
-            {fmt.date(today_date)}
+          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 2 }}>
+            {activePeriod.label}
           </div>
-          <div style={{ fontSize: 32, fontWeight: 900, lineHeight: 1 }}>
-            {fmt.currency(ms.total_expense)}
+          <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1 }}>
+            {fmt.currency(ps.total_expense)}
           </div>
-          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 8 }}>
-            {ms.days_with_meals} days • {ms.meal_count} meals • {ms.total_plates} plates
+          <div style={{ fontSize: 12, opacity: 0.85, marginTop: 8 }}>
+            {ps.days_with_meals} days · {ps.meal_count} meals · {ps.total_plates} plates this period
           </div>
         </div>
+      ) : (
+        <div className="card-elevated" style={{ borderLeft: '3px solid var(--yellow)', marginBottom: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--yellow)', marginBottom: 6 }}>
+            ⚠️ No Active Period
+          </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 10 }}>
+            All balances show <strong>₹0.00</strong> because no accounting period is active.
+            New meals can still be recorded but won't affect balances until a period is started.
+          </p>
+          <button className="btn btn-primary btn-sm" onClick={() => navigate('/settlement')}>
+            ➕ Start New Period
+          </button>
+        </div>
+      )}
 
-        {/* Stats Grid */}
+      {/* ── Stat Grid ────────────────────────────────────────────────── */}
+      {hasActivePeriod && (
         <div className="stat-grid">
           <div className="stat-card">
             <div className="stat-label">🌅 Breakfast</div>
-            <div className="stat-value orange">{fmt.currencyShort(ms.breakfast_expense)}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Morning food</div>
+            <div className="stat-value orange">{fmt.currencyShort(ps.breakfast_expense)}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>This period</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">🌙 Dinner</div>
-            <div className="stat-value orange">{fmt.currencyShort(ms.dinner_expense)}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Night food</div>
+            <div className="stat-value orange">{fmt.currencyShort(ps.dinner_expense)}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>This period</div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Balances: 3 columns on tablet/desktop */}
+      {/* ── Balances ─────────────────────────────────────────────────── */}
       <div>
-        <div className="section-title">Monthly Balances (Running)</div>
+        <div className="section-title">
+          {hasActivePeriod ? '📊 Period Balances' : '📊 Balances (No Active Period)'}
+        </div>
         <div className="mt-8" />
         <div className="balance-grid">
           {(ub || []).map((b, i) => (
@@ -120,16 +146,24 @@ export default function Dashboard() {
               <div className="balance-label">
                 {b.balance > 0.005 ? 'to receive' : b.balance < -0.005 ? 'to pay' : 'balanced'}
               </div>
+              {hasActivePeriod && (
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>
+                  Paid {fmt.currency(b.total_paid)} / Share {fmt.currency(b.total_share)}
+                </div>
+              )}
             </div>
           ))}
         </div>
         <div className="info-box mt-8">
           <strong style={{ color: 'var(--green)' }}>+</strong> = paid more → receive at settlement&nbsp;&nbsp;•&nbsp;&nbsp;
           <strong style={{ color: 'var(--red)' }}>−</strong> = paid less → pay at settlement
+          {hasActivePeriod && (
+            <span style={{ marginLeft: 8, opacity: 0.7 }}>• Only <strong>{activePeriod.label}</strong> included</span>
+          )}
         </div>
       </div>
 
-      {/* Lower Grid: Today's Meals + Quick Actions on Desktop */}
+      {/* ── Lower Grid ───────────────────────────────────────────────── */}
       <div className="dashboard-lower-grid">
         {/* Today's Meals */}
         <div>
@@ -158,7 +192,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Quick Actions & Navigation */}
+        {/* Quick Actions */}
         <div>
           <div className="section-title">Quick Actions</div>
           <div className="mt-8 dashboard-quick-actions">
@@ -167,7 +201,7 @@ export default function Dashboard() {
             </button>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <button className="btn btn-secondary" onClick={() => navigate('/settlement')}>
-                💰 Settle Up
+                💰 {hasActivePeriod ? 'Settle Up' : 'Periods'}
               </button>
               <button className="btn btn-secondary" onClick={() => navigate('/reports')}>
                 📊 Reports
