@@ -3,7 +3,7 @@ const Meal              = require('../models/Meal');
 const SettlementPeriod  = require('../models/SettlementPeriod');
 
 /**
- * Distribute totalAmount among userIds with proper penny rounding.
+ * Distribute totalAmount equally among userIds with proper penny rounding.
  * Guarantees sum of shares === totalAmount.
  * Returns { [userId.toString()]: shareAmount }
  */
@@ -17,6 +17,78 @@ function calculateShares(totalAmount, userIds) {
   userIds.forEach((uid, i) => {
     shares[uid.toString()] = (baseCents + (i < extraCents ? 1 : 0)) / 100;
   });
+  return shares;
+}
+
+/**
+ * Calculate shares based on individual quantities consumed.
+ * quantityMap: { [userId.toString()]: quantityNumber }
+ * unitPrice: price per unit
+ * Returns { [userId.toString()]: shareAmount }
+ * Guarantees the sum equals totalAmount (penny-corrected).
+ */
+function calculateQuantityShares(quantityMap, unitPrice) {
+  const entries = Object.entries(quantityMap).map(([uid, qty]) => ({
+    uid,
+    qty: Number(qty) || 0,
+    amount: Math.round(Number(qty || 0) * unitPrice * 100) / 100
+  }));
+
+  // Compute raw total
+  const rawTotal = entries.reduce((s, e) => s + e.amount, 0);
+  const totalCents = Math.round(rawTotal * 100);
+
+  // Distribute cents proportionally, penny-round
+  let assigned = 0;
+  const shares = {};
+  entries.forEach((e, i) => {
+    const isLast = i === entries.length - 1;
+    const cents  = isLast
+      ? totalCents - assigned
+      : Math.round((e.qty / (entries.reduce((s, x) => s + x.qty, 0) || 1)) * totalCents);
+    shares[e.uid] = cents / 100;
+    assigned += cents;
+  });
+
+  return shares;
+}
+
+/**
+ * Calculate shares for multi-item meals with per-person per-item quantities.
+ * participantItemQtys: [{ userId, itemId, quantity }]
+ * items: [{ _id, unitPrice }]
+ * participants: array of all participant userIds
+ * Returns { [userId.toString()]: shareAmount }
+ */
+function calculateMultiItemShares(participantItemQtys, items, participants) {
+  const itemPriceMap = {};
+  items.forEach(it => { itemPriceMap[it._id.toString()] = it.unitPrice; });
+
+  const userTotals = {};
+  participants.forEach(uid => { userTotals[uid.toString()] = 0; });
+
+  participantItemQtys.forEach(piq => {
+    const uid   = piq.userId.toString();
+    const price = itemPriceMap[piq.itemId.toString()] || 0;
+    userTotals[uid] = (userTotals[uid] || 0) + Math.round(piq.quantity * price * 100) / 100;
+  });
+
+  // Penny-correct to guarantee sum
+  const rawTotal   = Object.values(userTotals).reduce((s, v) => s + v, 0);
+  const totalCents = Math.round(rawTotal * 100);
+  const keys       = Object.keys(userTotals);
+  let assigned     = 0;
+  const shares     = {};
+
+  keys.forEach((uid, i) => {
+    const isLast = i === keys.length - 1;
+    const cents  = isLast
+      ? totalCents - assigned
+      : Math.round((userTotals[uid] / (rawTotal || 1)) * totalCents);
+    shares[uid] = cents / 100;
+    assigned += cents;
+  });
+
   return shares;
 }
 
@@ -131,9 +203,12 @@ function buildPeriodLabel(startDate, endDate) {
 
 module.exports = {
   calculateShares,
+  calculateQuantityShares,
+  calculateMultiItemShares,
   getPriceForDate,
   getBalances,
   generateSettlementTransactions,
   getActivePeriod,
   buildPeriodLabel
 };
+
