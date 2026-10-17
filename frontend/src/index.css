@@ -770,3 +770,565 @@ body {
     gap: 28px;
   }
 }
+
+/* ═══ Add Expense — Layout helpers ═══════════════════════════════════════════ */
+.add-expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ae-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ae-half   { flex: 1 1 calc(50% - 6px); min-width: 140px; }
+.ae-third  { flex: 1 1 calc(33% - 8px); min-width: 100px; }
+.ae-quarter { flex: 1 1 calc(25% - 9px); min-width: 80px; }
+.ae-flex1  { flex: 1 1 0; min-width: 80px; }
+.ae-flex2  { flex: 2 1 0; min-width: 140px; }
+
+/* ═══ Food Type Selector ═══════════════════════════════════════════════════════ */
+.food-type-selector {
+  display: flex;
+  gap: 10px;
+}
+
+.food-type-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.food-type-btn:hover {
+  border-color: var(--orange);
+  background: rgba(255,107,53,0.07);
+}
+
+.food-type-btn.selected {
+  border-color: var(--orange);
+  background: rgba(255,107,53,0.12);
+  box-shadow: 0 0 0 2px rgba(255,107,53,0.2);
+}
+
+.ft-icon {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.ft-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ft-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ═══ Price Input ══════════════════════════════════════════════════════════════ */
+.price-input-wrap {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+
+.price-input-wrap:focus-within {
+  border-color: var(--orange);
+}
+
+.price-prefix {
+  padding: 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--orange);
+  background: rgba(255,107,53,0.08);
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+
+.price-input {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 10px 12px;
+}
+
+.price-input:focus { outline: none; }
+
+.btn-reset-price {
+  background: none;
+  border: none;
+  padding: 0 10px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 18px;
+  transition: color var(--transition);
+}
+
+.btn-reset-price:hover { color: var(--orange); }
+
+.price-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.price-custom-badge {
+  font-size: 11px;
+  color: var(--amber);
+  font-weight: 500;
+}
+
+.subtotal-display {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--orange);
+  padding: 8px 0;
+}
+
+.subtotal-display.sm {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ═══ Pricing Method Selector ══════════════════════════════════════════════════ */
+.pricing-method-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pm-btn {
+  flex: 1 1 0;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: left;
+  color: var(--text-primary);
+  font-size: 20px;
+}
+
+.pm-btn:hover {
+  border-color: var(--blue);
+  background: rgba(83,82,237,0.07);
+}
+
+.pm-btn.selected {
+  border-color: var(--blue);
+  background: rgba(83,82,237,0.12);
+  box-shadow: 0 0 0 2px rgba(83,82,237,0.2);
+}
+
+.pm-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pm-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ═══ Split Method Selector ════════════════════════════════════════════════════ */
+.split-method-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.sm-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sm-btn:hover {
+  border-color: var(--green);
+  background: rgba(46,213,115,0.07);
+}
+
+.sm-btn.selected {
+  border-color: var(--green);
+  background: rgba(46,213,115,0.12);
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* ═══ Per-Person Quantity ══════════════════════════════════════════════════════ */
+.per-person-qty {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.ppq-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ppq-row.ppq-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.ppq-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ppq-stepper {
+  flex-shrink: 0;
+}
+
+.ppq-amount {
+  min-width: 60px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--orange);
+}
+
+/* ═══ Multi-item Toggle ════════════════════════════════════════════════════════ */
+.multi-item-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  display: none;
+}
+
+.toggle-switch {
+  width: 44px;
+  height: 24px;
+  background: var(--glass-border);
+  border-radius: 12px;
+  position: relative;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: transform var(--transition);
+}
+
+.toggle-label input:checked ~ .toggle-switch {
+  background: var(--orange);
+}
+
+.toggle-label input:checked ~ .toggle-switch::after {
+  transform: translateX(20px);
+}
+
+.toggle-text { color: var(--text-primary); }
+
+/* ═══ Multi-item Food Cards ════════════════════════════════════════════════════ */
+.multi-items-container {
+  background: rgba(255,255,255,0.02);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.multi-items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.food-item-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.fic-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fic-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fic-remove {
+  background: none;
+  border: none;
+  color: var(--red);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background var(--transition);
+}
+
+.fic-remove:hover { background: var(--red-soft); }
+
+.item-qty-details {
+  border-top: 1px solid var(--glass-border);
+  padding-top: 8px;
+}
+
+.item-qty-summary {
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.item-qty-summary::before {
+  content: '▶';
+  font-size: 9px;
+  transition: transform 0.2s;
+}
+
+details[open] .item-qty-summary::before {
+  transform: rotate(90deg);
+}
+
+/* ═══ Calculation Preview — enhanced ══════════════════════════════════════════ */
+.calc-preview {
+  background: linear-gradient(135deg, rgba(255,107,53,0.08) 0%, rgba(255,179,71,0.08) 100%);
+  border: 1.5px solid rgba(255,107,53,0.25);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+}
+
+.calc-header {
+  text-align: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,107,53,0.15);
+}
+
+.calc-total {
+  font-size: 28px;
+  font-weight: 900;
+  background: var(--grad-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.calc-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.calc-shares {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calc-share-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.calc-share-row.not-eating {
+  opacity: 0.35;
+}
+
+.calc-share-row .user-name { font-weight: 500; }
+.calc-share-row .amount { font-weight: 700; }
+.calc-share-row .amount.zero { color: var(--text-muted); }
+
+.calc-method-tag {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,107,53,0.15);
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* ═══ Payment section ══════════════════════════════════════════════════════════ */
+.payment-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 14px;
+  font-size: 13px;
+  border-top: 1px solid var(--glass-border);
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+
+/* ═══ Meal Card — custom meal enhancements ═════════════════════════════════════ */
+.meal-card-custom {
+  border-left: 3px solid var(--blue) !important;
+}
+
+.meal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.custom-meal-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba(83,82,237,0.2);
+  color: #8B8AFF;
+  letter-spacing: 0.3px;
+}
+
+.custom-price-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba(255,195,18,0.15);
+  color: var(--yellow);
+  letter-spacing: 0.3px;
+}
+
+.meal-description {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  font-style: italic;
+}
+
+.meal-pm-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 7px;
+  background: rgba(83,82,237,0.12);
+  color: #8B8AFF;
+  border-radius: 20px;
+  font-weight: 600;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.meal-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.meal-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.mi-desc {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.mi-calc {
+  color: var(--text-muted);
+}
+
+.share-row-absent {
+  opacity: 0.3;
+}
+
+.share-qty {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.split-method-tag {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
